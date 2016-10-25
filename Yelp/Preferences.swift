@@ -12,10 +12,10 @@ import Foundation
 class Preferences: NSObject {
     
     var term: String?
-    var sort: YelpSortMode?
-    var categories: [String]?
-    var deals: Bool?
-    var distance: Int?
+    var sort: Filter?
+    var categories: [Filter]?
+    var deals: Filter?
+    var distance: Filter?
     
     override init() {
         self.term = "Restaurants"
@@ -25,4 +25,30 @@ class Preferences: NSObject {
         self.distance = nil
     }
     
+    func getYelpSortMode() -> YelpSortMode? {
+        return sort?.yelpData as? YelpSortMode
+    }
+    
+    func getYelpCategories() -> [String] {
+        if categories == nil {
+            return []
+        } else {
+            var selectedCategories: [String] = []
+            for category in categories! {
+                selectedCategories.append(category.yelpData as! String)
+            }
+            return selectedCategories
+        }
+    }
+    
+    func getYelpDeals() -> Bool {
+        if deals != nil {
+            return (deals?.isOn)!
+        }
+        return false
+    }
+    
+    func getYelpDistance() -> Int? {
+        return distance?.yelpData as? Int
+    }
 }

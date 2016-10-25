@@ -10,18 +10,20 @@ import UIKit
 import MBProgressHUD
 
 class BusinessesViewController: UIViewController, UITableViewDataSource, UITableViewDelegate,
-    FiltersViewControllerDelegate, UISearchBarDelegate {
+    FiltersViewControllerDelegate, UISearchBarDelegate, UIScrollViewDelegate {
     
     @IBOutlet weak var tableView: UITableView!
     
     let searchBar = UISearchBar()
-    
     var businesses: [Business]!
-    var originalBusinesses: [Business]!
+    var isMoreDataLoading = false
+    let itemLimit: Int = 20
+    var itemOffset: Int = 0
     
     var preferences: Preferences = Preferences() {
         didSet {
-            applyPreferences()
+            itemOffset = 0
+            searchWithPreferences(isNewSearch: true)
         }
     }
     
@@ -39,19 +41,26 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
         self.preferences = Preferences()
     }
     
-    private func applyPreferences() {
-        let categories = self.preferences.categories
+    private func searchWithPreferences(isNewSearch: Bool) {
+        let categories = self.preferences.getYelpCategories()
         let term = self.preferences.term!
-        let sort = self.preferences.sort
-        let deals = self.preferences.deals
-        let distance = self.preferences.distance
+        let sort = self.preferences.getYelpSortMode()
+        let deals = self.preferences.getYelpDeals()
+        let distance = self.preferences.getYelpDistance()
         
         MBProgressHUD.showAdded(to: self.view, animated: true)
         
-        Business.searchWithTerm(term: term, sort: sort, categories: categories, deals: deals, distance: distance, completion: {(businesses: [Business]?, error: Error?) -> Void in
-            self.businesses = businesses
-            self.originalBusinesses = businesses
+        Business.searchWithTerm(term: term, sort: sort, categories: categories, deals: deals, distance: distance, limit: itemLimit, offset: itemOffset, completion: {(businesses: [Business]?, error: Error?) -> Void in
+            if error != nil {
+                NSLog(error.debugDescription)
+            }
+            if (isNewSearch) {
+                self.businesses = businesses
+            } else {
+                self.businesses!.append(contentsOf: businesses!)
+            }
             self.tableView.reloadData()
+            self.isMoreDataLoading = false
             
             MBProgressHUD.hide(for: self.view, animated: true)
             
@@ -100,12 +109,10 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
     
     func filtersViewController(filtersViewController: FiltersViewController, didUpdateFilters filters: Preferences) {
         self.preferences = filters
-
-        
     }
     
     ///
-    ///Search Implementation
+    /// Search
     ///
     func createSearchBar()
     {
@@ -121,7 +128,8 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         searchBar.endEditing(true)
-        applyPreferences()
+        itemOffset = 0
+        searchWithPreferences(isNewSearch: true)
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
@@ -130,5 +138,29 @@ class BusinessesViewController: UIViewController, UITableViewDataSource, UITable
     
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
         self.preferences.term = searchText
+    }
+    
+    ///
+    /// Infinite Scroll
+    ///
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if (!isMoreDataLoading) {
+            // Calculate the position of one screen length before the bottom of the results
+            let scrollViewContentHeight = tableView.contentSize.height
+            let scrollOffsetThreshold = scrollViewContentHeight - tableView.bounds.size.height*1.5
+            
+            // When the user has scrolled past the threshold, start requesting
+            if(scrollView.contentOffset.y > scrollOffsetThreshold && tableView.isDragging) {
+                
+                isMoreDataLoading = true
+                loadMoreData()
+            }
+        }
+    }
+    
+    func loadMoreData() {
+        
+        itemOffset += 20
+        searchWithPreferences(isNewSearch: false)
     }
 }

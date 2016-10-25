@@ -12,9 +12,11 @@ class Filter: NSObject {
     
     var name: String!
     var isOn: Bool! = false
+    var yelpData: AnyObject?
     
-    init (name: String) {
+    init (name: String, yelpData: AnyObject?) {
         self.name = name
+        self.yelpData = yelpData
     }
-
+    
 }
