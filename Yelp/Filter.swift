@@ -14,9 +14,10 @@ class Filter: NSObject {
     var isOn: Bool! = false
     var yelpData: AnyObject?
     
-    init (name: String, yelpData: AnyObject?) {
+    init (name: String, yelpData: AnyObject?, isOn: Bool = false) {
         self.name = name
         self.yelpData = yelpData
+        self.isOn = isOn
     }
     
 }

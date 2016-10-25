@@ -13,7 +13,7 @@ class Section: NSObject {
     var name: String!
     var contents: [Filter]! = []
     var allowsMultiselect: Bool = false
-    var isExpanded: Bool?
+    var isExpanded: Bool? = false
     
     init(name: String, multiselect: Bool) {
         super.init()
@@ -30,6 +30,11 @@ class Section: NSObject {
         } else {
             return 1
         }
+    }
+    
+    func getSelectedRowName() -> String {
+        
+        return (contents.first(where: {$0.isOn})?.name)!
     }
     
     func filterDidChangeValue(row: Int, value: Bool)

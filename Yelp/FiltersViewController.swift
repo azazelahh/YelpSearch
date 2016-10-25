@@ -37,11 +37,12 @@ class FiltersViewController: UIViewController, UITableViewDataSource, UITableVie
     private static func makeSections() -> [Section] {
         
         let dealSection = Section(name: "", multiselect: true)
+        dealSection.isExpanded = true
         dealSection.contents.append(Filter(name: "Offering a Deal", yelpData: nil))
         
         let distanceSection = Section(name: "Distance", multiselect: false)
         distanceSection.isExpanded = false
-        distanceSection.contents.append(Filter(name: "Best Match", yelpData: nil))
+        distanceSection.contents.append(Filter(name: "Best Match", yelpData: nil, isOn: true))
         distanceSection.contents.append(Filter(name: "0.3 miles", yelpData: 483 as AnyObject?))
         distanceSection.contents.append(Filter(name: "1 mile", yelpData: 1609 as AnyObject?))
         distanceSection.contents.append(Filter(name: "5 miles", yelpData: 8047 as AnyObject?))
@@ -49,11 +50,12 @@ class FiltersViewController: UIViewController, UITableViewDataSource, UITableVie
         
         let sortSection = Section(name: "Sort By", multiselect: false)
         sortSection.isExpanded = false
-        sortSection.contents.append(Filter(name: "Best Match", yelpData: YelpSortMode.bestMatched as AnyObject?))
+        sortSection.contents.append(Filter(name: "Best Match", yelpData: YelpSortMode.bestMatched as AnyObject?, isOn: true))
         sortSection.contents.append(Filter(name: "Distance", yelpData: YelpSortMode.distance as AnyObject?))
         sortSection.contents.append(Filter(name: "Rating", yelpData: YelpSortMode.highestRated as AnyObject?))
         
         let categorySection = Section(name: "Category", multiselect: true)
+        categorySection.isExpanded = true
         let categories = FiltersViewController.yelpCategories()
         for category in categories {
             categorySection.contents.append(Filter(name: category["name"]!, yelpData: category["code"]! as AnyObject?))
@@ -150,10 +152,22 @@ class FiltersViewController: UIViewController, UITableViewDataSource, UITableVie
             switchCell.onSwitch.isOn = sectionRow.isOn
             cell = switchCell
         } else {
-            
+            let ddCell = tableView.dequeueReusableCell(withIdentifier: "DropdownCell", for: indexPath) as! DropdownCell
+            ddCell.dropdownLabel.text = section.getSelectedRowName()
+            cell = ddCell
         }
         
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let section = sections[indexPath.section]
+        
+        if (!section.isExpanded!) {
+            section.isExpanded = true
+            tableView.reloadSections(NSIndexSet(index: indexPath.section) as IndexSet, with: UITableViewRowAnimation.automatic)
+        }
     }
     
     func switchCell(switchCell: SwitchCell, didChangeValue value: Bool) {
@@ -162,7 +176,11 @@ class FiltersViewController: UIViewController, UITableViewDataSource, UITableVie
         let section = sections[indexPath.section]
         section.filterDidChangeValue(row: indexPath.row, value: value)
         
-        tableView.reloadData()
+        if (!section.allowsMultiselect) {
+            section.isExpanded = false
+        }
+        
+        tableView.reloadSections(NSIndexSet(index: indexPath.section) as IndexSet, with: UITableViewRowAnimation.automatic)
         
     }
     
